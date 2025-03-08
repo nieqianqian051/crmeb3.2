@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.maijishop.crmeb.mapper.ProductMapper">
+
+    <!-- 商品结果映射 -->
+    <resultMap id="productResultMap" type="com.maijishop.crmeb.entity.Product">
+        <id column="id" property="id"/>
+        <result column="product_name" property="productName"/>
+        <result column="product_desc" property="productDesc"/>
+        <result column="keyword" property="keyword"/>
+        <result column="bar_code" property="barCode"/>
+        <result column="cate_id" property="categoryId"/>
+        <result column="price" property="price"/>
+        <result column="market_price" property="marketPrice"/>
+        <result column="cost_price" property="costPrice"/>
+        <result column="stock" property="stock"/>
+        <result column="sales" property="sales"/>
+        <result column="image" property="image"/>
+        <result column="slider_image" property="sliderImage"/>
+        <result column="product_type" property="productType"/>
+        <result column="is_show" property="isShow"/>
+        <result column="is_hot" property="isHot"/>
+        <result column="is_recommend" property="isRecommend"/>
+        <result column="is_new" property="isNew"/>
+        <result column="sort" property="sort"/>
+        <result column="status" property="status"/>
+        <result column="is_del" property="isDel"/>
+        <result column="views" property="views"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 带分类名称的商品结果映射 -->
+    <resultMap id="productWithCategoryResultMap" extends="productResultMap" type="com.maijishop.crmeb.entity.Product">
+        <result column="category_name" property="categoryName"/>
+    </resultMap>
+
+    <!-- 减少商品库存 -->
+    <update id="decreaseStock">
+        UPDATE product
+        SET stock = stock - #{quantity},
+            sales = sales + #{quantity},
+            update_time = NOW()
+        WHERE id = #{productId}
+          AND stock >= #{quantity}
+          AND is_del = 0
+    </update>
+
+    <!-- 增加商品库存 -->
+    <update id="increaseStock">
+        UPDATE product
+        SET stock = stock + #{quantity},
+            sales = sales - #{quantity},
+            update_time = NOW()
+        WHERE id = #{productId}
+          AND is_del = 0
+    </update>
+
+    <!-- 查询商品列表（带分类名称） -->
+    <select id="selectProductWithCategory" resultMap="productWithCategoryResultMap">
+        SELECT p.*, c.name as category_name
+        FROM product p
+        LEFT JOIN product_category c ON p.cate_id = c.id
+        WHERE p.is_del = 0
+        <if test="categoryId != null and categoryId > 0">
+            AND p.cate_id = #{categoryId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                p.product_name LIKE CONCAT('%', #{keyword}, '%')
+                OR p.keyword LIKE CONCAT('%', #{keyword}, '%')
+                OR p.product_desc LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        <if test="isShow != null">
+            AND p.is_show = #{isShow}
+        </if>
+        <if test="productType != null">
+            AND p.product_type = #{productType}
+        </if>
+        <if test="isHot != null">
+            AND p.is_hot = #{isHot}
+        </if>
+        <if test="isRecommend != null">
+            AND p.is_recommend = #{isRecommend}
+        </if>
+        <if test="isNew != null">
+            AND p.is_new = #{isNew}
+        </if>
+        ORDER BY p.sort DESC, p.id DESC
+    </select>
+
+    <!-- 查询热门商品 -->
+    <select id="selectHotProducts" resultMap="productResultMap">
+        SELECT *
+        FROM product
+        WHERE is_show = 1
+          AND is_hot = 1
+          AND is_del = 0
+        ORDER BY sales DESC, views DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询推荐商品 -->
+    <select id="selectRecommendProducts" resultMap="productResultMap">
+        SELECT *
+        FROM product
+        WHERE is_show = 1
+          AND is_recommend = 1
+          AND is_del = 0
+        ORDER BY sales DESC, sort DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询新品 -->
+    <select id="selectNewProducts" resultMap="productResultMap">
+        SELECT *
+        FROM product
+        WHERE is_show = 1
+          AND is_new = 1
+          AND is_del = 0
+        ORDER BY create_time DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 根据多个商品ID查询商品信息 -->
+    <select id="selectByIds" resultMap="productResultMap">
+        SELECT *
+        FROM product
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND is_del = 0
+    </select>
+</mapper> 

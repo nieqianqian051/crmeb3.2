@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.maijishop.crmeb.mapper.ProductSkuMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="productSkuResultMap" type="com.maijishop.crmeb.entity.ProductSku">
+        <id column="id" property="id"/>
+        <result column="product_id" property="productId"/>
+        <result column="sku_name" property="skuName"/>
+        <result column="sku_code" property="skuCode"/>
+        <result column="bar_code" property="barCode"/>
+        <result column="price" property="price"/>
+        <result column="cost_price" property="costPrice"/>
+        <result column="market_price" property="marketPrice"/>
+        <result column="stock" property="stock"/>
+        <result column="sales" property="sales"/>
+        <result column="image" property="image"/>
+        <result column="weight" property="weight"/>
+        <result column="volume" property="volume"/>
+        <result column="sort" property="sort"/>
+        <result column="is_default" property="isDefault"/>
+        <result column="is_del" property="isDel"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 根据商品ID查询SKU列表 -->
+    <select id="selectByProductId" resultMap="productSkuResultMap">
+        SELECT *
+        FROM product_sku
+        WHERE product_id = #{productId}
+          AND is_del = 0
+        ORDER BY sort DESC, id ASC
+    </select>
+
+    <!-- 批量插入SKU -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO product_sku (
+        product_id, sku_name, sku_code, bar_code, price, cost_price, market_price,
+        stock, image, weight, volume, sort, is_default, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.productId}, #{item.skuName}, #{item.skuCode}, #{item.barCode},
+            #{item.price}, #{item.costPrice}, #{item.marketPrice}, #{item.stock},
+            #{item.image}, #{item.weight}, #{item.volume}, #{item.sort},
+            #{item.isDefault}, #{item.createTime}, #{item.updateTime}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 批量更新SKU -->
+    <update id="batchUpdate" parameterType="java.util.List">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE product_sku
+            <set>
+                <if test="item.skuName != null">sku_name = #{item.skuName},</if>
+                <if test="item.skuCode != null">sku_code = #{item.skuCode},</if>
+                <if test="item.barCode != null">bar_code = #{item.barCode},</if>
+                <if test="item.price != null">price = #{item.price},</if>
+                <if test="item.costPrice != null">cost_price = #{item.costPrice},</if>
+                <if test="item.marketPrice != null">market_price = #{item.marketPrice},</if>
+                <if test="item.stock != null">stock = #{item.stock},</if>
+                <if test="item.image != null">image = #{item.image},</if>
+                <if test="item.weight != null">weight = #{item.weight},</if>
+                <if test="item.volume != null">volume = #{item.volume},</if>
+                <if test="item.sort != null">sort = #{item.sort},</if>
+                <if test="item.isDefault != null">is_default = #{item.isDefault},</if>
+                update_time = NOW()
+            </set>
+            WHERE id = #{item.id} AND is_del = 0
+        </foreach>
+    </update>
+
+    <!-- 根据商品ID删除所有SKU -->
+    <delete id="deleteByProductId">
+        UPDATE product_sku
+        SET is_del = 1,
+            update_time = NOW()
+        WHERE product_id = #{productId}
+    </delete>
+</mapper> 
