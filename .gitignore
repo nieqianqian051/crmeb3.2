@@ -1,0 +1,42 @@
+# IDE和编辑器文件
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+
+# 编译输出
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# 日志文件
+logs/
+*.log
+
+# Maven相关
+.mvn/
+mvnw
+mvnw.cmd
+
+# 运行时文件
+*.pid
+*.hprof
+
+# 本地配置
+application-local.yml
+application-local.properties
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 上传目录
+upload/ 
