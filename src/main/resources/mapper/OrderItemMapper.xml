@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.maijishop.crmeb.mapper.OrderItemMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="orderItemResultMap" type="com.maijishop.crmeb.entity.OrderItem">
+        <id column="id" property="id"/>
+        <result column="order_id" property="orderId"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="product_id" property="productId"/>
+        <result column="product_sku_id" property="productSkuId"/>
+        <result column="product_name" property="productName"/>
+        <result column="product_image" property="productImage"/>
+        <result column="specs" property="specs"/>
+        <result column="sku_code" property="skuCode"/>
+        <result column="bar_code" property="barCode"/>
+        <result column="price" property="price"/>
+        <result column="quantity" property="quantity"/>
+        <result column="total_price" property="totalPrice"/>
+        <result column="pay_price" property="payPrice"/>
+        <result column="pay_total_price" property="payTotalPrice"/>
+        <result column="is_comment" property="isComment"/>
+        <result column="refund_status" property="refundStatus"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_del" property="isDel"/>
+    </resultMap>
+
+    <!-- 批量插入订单商品 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO tb_order_item (
+            order_id, order_no, product_id, product_sku_id, product_name, product_image,
+            specs, sku_code, bar_code, price, quantity, total_price, pay_price, pay_total_price,
+            is_comment, refund_status, create_time, update_time, is_del
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.orderId}, #{item.orderNo}, #{item.productId}, #{item.productSkuId}, #{item.productName}, #{item.productImage},
+                #{item.specs}, #{item.skuCode}, #{item.barCode}, #{item.price}, #{item.quantity}, #{item.totalPrice}, #{item.payPrice}, #{item.payTotalPrice},
+                #{item.isComment}, #{item.refundStatus}, #{item.createTime}, #{item.updateTime}, #{item.isDel}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 详细查询订单商品（包含商品和SKU信息） -->
+    <select id="selectOrderItemDetails" resultMap="orderItemResultMap">
+        SELECT oi.*
+        FROM tb_order_item oi
+        JOIN tb_order o ON oi.order_id = o.id
+        WHERE oi.order_id = #{orderId} AND oi.is_del = 0
+        ORDER BY oi.id ASC
+    </select>
+
+    <!-- 按商品ID统计销量 -->
+    <select id="statisticSalesByProduct" resultType="java.util.Map">
+        SELECT 
+            oi.product_id, 
+            p.product_name,
+            SUM(oi.quantity) AS total_quantity,
+            SUM(oi.pay_total_price) AS total_amount
+        FROM tb_order_item oi
+        JOIN tb_order o ON oi.order_id = o.id
+        JOIN tb_product p ON oi.product_id = p.id
+        WHERE o.pay_status = 1 AND o.is_del = 0 AND oi.is_del = 0
+        <if test="beginTime != null">
+            AND o.pay_time &gt;= #{beginTime}
+        </if>
+        <if test="endTime != null">
+            AND o.pay_time &lt;= #{endTime}
+        </if>
+        GROUP BY oi.product_id, p.product_name
+        ORDER BY total_quantity DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 按分类统计销量 -->
+    <select id="statisticSalesByCategory" resultType="java.util.Map">
+        SELECT 
+            pc.id AS category_id,
+            pc.name AS category_name,
+            COUNT(DISTINCT oi.product_id) AS product_count,
+            SUM(oi.quantity) AS total_quantity,
+            SUM(oi.pay_total_price) AS total_amount
+        FROM tb_order_item oi
+        JOIN tb_order o ON oi.order_id = o.id
+        JOIN tb_product p ON oi.product_id = p.id
+        JOIN tb_product_category pc ON p.cate_id = pc.id
+        WHERE o.pay_status = 1 AND o.is_del = 0 AND oi.is_del = 0 AND p.is_del = 0
+        <if test="beginTime != null">
+            AND o.pay_time &gt;= #{beginTime}
+        </if>
+        <if test="endTime != null">
+            AND o.pay_time &lt;= #{endTime}
+        </if>
+        GROUP BY pc.id, pc.name
+        ORDER BY total_quantity DESC
+    </select>
+</mapper> 
